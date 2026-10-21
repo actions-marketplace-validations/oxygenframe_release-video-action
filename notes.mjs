@@ -1,13 +1,16 @@
 // Turns GitHub release notes into an oxframe scene.
 //
 // Title card, one card per section, bullet lists when a section has several
-// lines, then an end card. A list that `oxframe check` rejects as
-// text_overflow is split in half and generated again.
+// lines, then an end card. A paragraph longer than a card holds is split on
+// sentences up front. A list that `oxframe check` rejects as text_overflow
+// is split in half and generated again.
 
 /** @typedef {{ heading: string, items: string[] }} Section */
 /** @typedef {{ name: string, kind: 'title' | 'list' | 'end', title: string, subtitle: string, items: string[] }} Card */
 
 const MAX_ITEMS = 4;
+/** Characters a title card's subtitle holds without leaving the frame. */
+const MAX_SUBTITLE = 160;
 
 /** Release notes as sections. A heading owns the bullets (or the paragraph) under it. */
 export function parseNotes(markdown) {
@@ -56,7 +59,11 @@ export function storyboard(sections, { maxItems = MAX_ITEMS } = {}) {
       continue;
     }
     if (section.items.length === 1) {
-      cards.push(titleCard(`section_${n++}`, heading, section.items[0]));
+      // A long paragraph grows the subtitle past the frame, which `check`
+      // reports as out_of_frame on the card's text, not as text_overflow.
+      for (const part of chunks(section.items[0], MAX_SUBTITLE)) {
+        cards.push(titleCard(`section_${n++}`, heading, part));
+      }
       continue;
     }
     cards.push(titleCard(`section_${n++}`, heading, ''));
@@ -122,6 +129,32 @@ function halves(card) {
     { ...card, title: split[0] },
     { ...card, title: split[1] },
   ];
+}
+
+/**
+ * `text` in pieces of at most `max` characters, cut between sentences, or
+ * between words inside a sentence that is longer than that.
+ * @param {string} text @param {number} max @returns {string[]}
+ */
+export function chunks(text, max) {
+  const pieces = [];
+  for (const sentence of text.split(/(?<=[.!?])\s+/).filter(Boolean)) {
+    let rest = sentence;
+    while (rest.length > max) {
+      const cut = rest.lastIndexOf(' ', max);
+      if (cut <= 0) break;
+      pieces.push(rest.slice(0, cut));
+      rest = rest.slice(cut + 1);
+    }
+    pieces.push(rest);
+  }
+  const out = [];
+  for (const piece of pieces) {
+    const last = out.length - 1;
+    if (last >= 0 && out[last].length + 1 + piece.length <= max) out[last] += ` ${piece}`;
+    else out.push(piece);
+  }
+  return out.length ? out : [text];
 }
 
 /** @param {string} text @returns {[string, string] | null} */

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { overflowNames, parseNotes, renderSource, splitOverflow, storyboard } from './notes.mjs';
+import { chunks, overflowNames, parseNotes, renderSource, splitOverflow, storyboard } from './notes.mjs';
 
 const notes = `
 # oxframe 0.6.0
@@ -96,4 +96,25 @@ test('only text_overflow on a section card asks for a split', () => {
     ],
   });
   assert.deepEqual(names, ['section_1']);
+});
+
+test('a long paragraph becomes several title cards, cut between sentences', () => {
+  const long =
+    'Shaders can read what is already drawn. A lens gets wet over the frame, a node ripples, and a scene gives way through rising water. All three run on the CPU, so a check and a render without a GPU paint them.';
+  const cards = storyboard([{ heading: 'Release', items: [long] }]);
+  assert.ok(cards.length > 1);
+  for (const card of cards) {
+    assert.equal(card.kind, 'title');
+    assert.equal(card.title, 'Release');
+    assert.ok(card.subtitle.length <= 160, card.subtitle);
+  }
+  assert.equal(cards.map((c) => c.subtitle).join(' '), long);
+  assert.ok(cards[0].subtitle.endsWith('.'));
+});
+
+test('a sentence longer than a card is cut between words', () => {
+  const words = Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ');
+  const parts = chunks(words, 50);
+  assert.ok(parts.every((p) => p.length <= 50));
+  assert.equal(parts.join(' '), words);
 });
