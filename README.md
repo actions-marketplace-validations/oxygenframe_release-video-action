@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: oxygenframe/release-video-action@v1.1.0
+      - uses: oxygenframe/release-video-action@v1.1.1
         with:
           portrait: true
 ```
@@ -33,7 +33,7 @@ any time later, with `tag`; the notes are read from the release:
 
 ```yaml
       - run: gh release create "$GITHUB_REF_NAME" --notes-file notes.md
-      - uses: oxygenframe/release-video-action@v1.1.0
+      - uses: oxygenframe/release-video-action@v1.1.1
         with:
           tag: ${{ github.ref_name }}
 ```

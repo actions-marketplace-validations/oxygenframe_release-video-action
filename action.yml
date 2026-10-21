@@ -20,7 +20,7 @@ inputs:
     required: false
     default: ''
   notes:
-    description: Release notes to render. Default: the notes of that release.
+    description: 'Release notes to render. Default: the notes of that release.'
     required: false
     default: ''
   token:
