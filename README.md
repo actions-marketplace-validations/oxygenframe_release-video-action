@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: oxygenframe/release-video-action@v1.0.2
+      - uses: oxygenframe/release-video-action@v1.0.3
         with:
           portrait: true
 ```
