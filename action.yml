@@ -1,0 +1,40 @@
+name: Release video
+description: Render a GitHub release's notes as an oxframe MP4 and attach it.
+inputs:
+  portrait:
+    description: Also set the frame to 9:16 (1080×1920).
+    required: false
+    default: 'false'
+  credit:
+    description: End the video with "made with oxframe".
+    required: false
+    default: 'true'
+  token:
+    description: Token that can upload the MP4 to the release.
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.release.tag_name }}
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.97.1
+    - shell: bash
+      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+    - shell: bash
+      run: |
+        curl --proto '=https' --tlsv1.2 -fsSL https://github.com/oxygenframe/oxframe-cli/releases/latest/download/install.sh | sh
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    - shell: bash
+      env:
+        RELEASE_BODY: ${{ github.event.release.body }}
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
+        RELEASE_REPO: ${{ github.repository }}
+        PORTRAIT: ${{ inputs.portrait }}
+        CREDIT: ${{ inputs.credit }}
+        GH_TOKEN: ${{ inputs.token }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: node ${{ github.action_path }}/main.mjs
