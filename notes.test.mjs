@@ -49,6 +49,8 @@ test('the scene waits on a transition and names every card', () => {
   assert.match(source, /\.size\(1080, 1920\)/);
   assert.match(source, /\.main\(\);/);
   assert.match(source, /\.name\("section_0"\)/);
+  assert.doesNotMatch(source, /wait_for\(0\.[0-9]/);
+  assert.match(source, /wait_for\(1\.0\)\.await/);
 });
 
 test('the credit can be left off', () => {

@@ -179,7 +179,8 @@ async fn opening(view: View) {
     let card = view.add(TitleCard::new(${rust(version)}).subtitle(${rust(repo)}).name("opening"));
     card.enter().await;
     card.next().await;
-    wait_for(0.4).await;
+    // oxframe check flags text that is readable and on screen for under 0.8s.
+    wait_for(1.0).await;
 }`;
 }
 
@@ -197,7 +198,8 @@ async fn ${card.name}(view: View) {
     transition(Transition::slide(Dir::Left)).await;
     ${built}
     card.enter().await;
-${reveals}    wait_for(0.3).await;
+${reveals}    // The last line is on screen only for this hold. Under 0.8s fails check.
+    wait_for(1.0).await;
 }`;
 }
 
@@ -222,7 +224,7 @@ async fn closing(view: View) {
     let card = view.add(EndCard::new(${rust(version)})${note}.name("closing"));
     transition(Transition::fade()).await;
     card.enter().await;
-${next}    wait_for(0.6).await;
+${next}    wait_for(1.0).await;
 }`;
 }
 
