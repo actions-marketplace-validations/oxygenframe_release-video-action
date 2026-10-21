@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: oxygenframe/release-video-action@v1.1.1
+      - uses: oxygenframe/release-video-action@v1.2.0
         with:
           portrait: true
 ```
@@ -33,11 +33,15 @@ any time later, with `tag`; the notes are read from the release:
 
 ```yaml
       - run: gh release create "$GITHUB_REF_NAME" --notes-file notes.md
-      - uses: oxygenframe/release-video-action@v1.1.1
+      - uses: oxygenframe/release-video-action@v1.2.0
         with:
           tag: ${{ github.ref_name }}
 ```
 
 `notes` renders text of your own instead of the release's notes.
+
+The generated project builds the oxframe SDK. The build is cached between
+runs (per CLI version), so only the first video after a new oxframe release
+compiles it.
 
 Licensed under either of MIT or Apache-2.0 at your option.

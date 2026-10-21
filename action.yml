@@ -42,8 +42,21 @@ runs:
       run: |
         curl --proto '=https' --tlsv1.2 -fsSL https://github.com/oxygenframe/oxframe-cli/releases/latest/download/install.sh | sh
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    # The generated project builds the whole SDK; keep that build between
+    # runs. The key follows the CLI, which pins the SDK version.
+    - id: cache-key
+      shell: bash
+      run: echo "key=oxframe-release-video-${{ runner.os }}-$("$HOME/.local/bin/oxframe" --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ${{ runner.temp }}/oxframe-target
+        key: ${{ steps.cache-key.outputs.key }}
     - shell: bash
       env:
+        CARGO_TARGET_DIR: ${{ runner.temp }}/oxframe-target
         RELEASE_BODY: ${{ inputs.notes || github.event.release.body }}
         RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         RELEASE_REPO: ${{ github.repository }}

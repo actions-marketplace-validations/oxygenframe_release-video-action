@@ -47,13 +47,15 @@ export function parseNotes(markdown) {
     .filter((section) => section.heading || section.items.length);
 }
 
-/** Cards in play order. Long lists become several cards; nothing is clipped. */
+/** Cards in play order. Long lists become several cards; nothing is clipped.
+ * Text before the first heading follows the card with the version, so it is
+ * titled "What's new" rather than repeating the version. */
 export function storyboard(sections, { maxItems = MAX_ITEMS } = {}) {
   /** @type {Card[]} */
   const cards = [];
   let n = 0;
   for (const section of sections) {
-    const heading = section.heading || 'Release';
+    const heading = section.heading || "What's new";
     if (!section.items.length) {
       cards.push(titleCard(`section_${n++}`, heading, ''));
       continue;

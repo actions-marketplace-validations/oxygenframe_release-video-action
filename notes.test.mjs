@@ -118,3 +118,8 @@ test('a sentence longer than a card is cut between words', () => {
   assert.ok(parts.every((p) => p.length <= 50));
   assert.equal(parts.join(' '), words);
 });
+
+test('text before the first heading is "What\'s new", not a second version card', () => {
+  const cards = storyboard(parseNotes('Parallel rendering.\n\n### Added\n\n- jobs'));
+  assert.equal(cards[0].title, "What's new");
+});
