@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: oxygenframe/release-video-action@v1.0.3
+      - uses: oxygenframe/release-video-action@v1.1.0
         with:
           portrait: true
 ```
@@ -26,5 +26,18 @@ line that is long enough to read is not flagged as too fast. The end card says
 repository's `oxframe.toml` is copied onto the generated project.
 
 The frame is 16:9. `portrait: true` renders 1080×1920 instead.
+
+A release created with `GITHUB_TOKEN` does not start other workflows, so
+`on: release` never runs for it. Render it in the job that creates it, or
+any time later, with `tag`; the notes are read from the release:
+
+```yaml
+      - run: gh release create "$GITHUB_REF_NAME" --notes-file notes.md
+      - uses: oxygenframe/release-video-action@v1.1.0
+        with:
+          tag: ${{ github.ref_name }}
+```
+
+`notes` renders text of your own instead of the release's notes.
 
 Licensed under either of MIT or Apache-2.0 at your option.
