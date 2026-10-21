@@ -1,5 +1,8 @@
-name: Release video
+name: Oxframe release video
 description: Render a GitHub release's notes as an oxframe MP4 and attach it.
+branding:
+  icon: video
+  color: blue
 inputs:
   portrait:
     description: Also set the frame to 9:16 (1080×1920).
