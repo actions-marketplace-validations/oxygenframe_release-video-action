@@ -1,5 +1,11 @@
 # Release video
 
+[![release](https://img.shields.io/github/v/release/oxygenframe/release-video-action)](https://github.com/oxygenframe/release-video-action/releases)
+[![license](https://img.shields.io/badge/license-MIT%20or%20Apache--2.0-blue)](#license)
+[![made with oxframe](https://img.shields.io/badge/made%20with-oxframe-e13238)](https://oxframe.dev)
+
+[![A release video made by this Action: the version as a title, the changes as a list, then an end card](https://oxframe.dev/media/0.20.0/gallery/release.jpg)](https://oxframe.dev/media/0.20.0/gallery/release.mp4)
+
 A GitHub Action that turns a release's notes into a short oxframe video and
 attaches the MP4 to the release. No model call: headings and lists become
 title cards and bullet lists, with a slide between them.
@@ -43,5 +49,7 @@ any time later, with `tag`; the notes are read from the release:
 The generated project builds the oxframe SDK. The build is cached between
 runs (per CLI version), so only the first video after a new oxframe release
 compiles it.
+
+## License
 
 Licensed under either of MIT or Apache-2.0 at your option.
