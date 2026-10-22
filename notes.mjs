@@ -22,20 +22,48 @@ export function parseNotes(markdown) {
     current = { heading, items: [], prose: [] };
     sections.push(current);
   };
+  // A line that follows a bullet continues it (notes are often wrapped at
+  // 80 columns), and so does an indented line after a blank one. Code
+  // blocks are left out: they do not read on a card.
+  let inItem = false;
+  let afterBlank = false;
+  let inFence = false;
   for (const raw of String(markdown ?? '').split(/\r?\n/)) {
+    if (/^\s*(```|~~~)/.test(raw)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     const line = raw.trim();
-    if (!line || line.startsWith('# ')) continue;
+    if (!line) {
+      afterBlank = true;
+      continue;
+    }
+    const wasBlank = afterBlank;
+    afterBlank = false;
+    if (line.startsWith('# ')) {
+      inItem = false;
+      continue;
+    }
     const heading = /^#{2,3}\s+(.+?)\s*#*$/.exec(line);
     if (heading) {
       open(inline(heading[1]));
+      inItem = false;
       continue;
     }
     const item = /^(?:[-*+]|\d+[.)])\s+(.+)$/.exec(line);
     if (item) {
       if (!current) open('');
       current.items.push(inline(item[1]));
+      inItem = true;
       continue;
     }
+    if (inItem && (!wasBlank || /^\s{2,}/.test(raw))) {
+      const items = current.items;
+      items[items.length - 1] += ` ${inline(line)}`;
+      continue;
+    }
+    inItem = false;
     if (!current) open('');
     current.prose.push(inline(line));
   }

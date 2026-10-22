@@ -23,6 +23,39 @@ test('release notes become a heading and its bullets', () => {
   ]);
 });
 
+test('a bullet wrapped onto the next lines stays one bullet', () => {
+  const wrapped = `
+## Added
+- Every issue in \`report.json\` has \`docs\`: the link to its rule on
+  https://oxframe.dev/docs/check-rules, with how to fix it.
+- A second change.
+
+## Breaking
+- \`code.code()\` is no longer a signal:
+
+  \`\`\`rust
+  code.code().to(next, 1.0).await;
+  \`\`\`
+
+  The old \`.to()\` typed the text.
+
+Upgrade with \`oxframe upgrade\`.
+`;
+  assert.deepEqual(parseNotes(wrapped), [
+    {
+      heading: 'Added',
+      items: [
+        'Every issue in report.json has docs: the link to its rule on https://oxframe.dev/docs/check-rules, with how to fix it.',
+        'A second change.',
+      ],
+    },
+    {
+      heading: 'Breaking',
+      items: ['code.code() is no longer a signal: The old .to() typed the text.'],
+    },
+  ]);
+});
+
 test('a long list is several cards and a short one is a title', () => {
   const cards = storyboard(parseNotes(notes), { maxItems: 2 });
   assert.equal(cards[0].kind, 'title');
