@@ -10,9 +10,18 @@ import { overflowNames, parseNotes, renderSource, splitOverflow, storyboard } fr
 
 const repo = process.env.RELEASE_REPO || 'oxygenframe/oxframe';
 const version = process.env.RELEASE_TAG || 'release';
-const body = process.env.RELEASE_BODY || '';
+// With only a tag (`tag:` input), read the notes of that release.
+const body = process.env.RELEASE_BODY || releaseNotes(version);
 const portrait = process.env.PORTRAIT === 'true';
 const credit = process.env.CREDIT !== 'false';
+
+function releaseNotes(tag) {
+  if (!process.env.GITHUB_TOKEN || tag === 'release') return '';
+  const r = spawnSync('gh', ['release', 'view', tag, '--json', 'body', '-q', '.body'], {
+    encoding: 'utf8',
+  });
+  return r.status === 0 ? r.stdout : '';
+}
 
 const root = mkdtempSync(join(tmpdir(), 'oxframe-release-'));
 const bin = process.env.OXFRAME_BIN || 'oxframe';
@@ -21,7 +30,7 @@ run('init', [bin, 'init', 'release'], root);
 const project = join(root, 'release');
 copyTheme(process.cwd(), project);
 
-let cards = storyboard(parseNotes(body));
+let cards = storyboard(parseNotes(body), { portrait });
 for (let attempt = 0; attempt < 6; attempt++) {
   writeFileSync(join(project, 'src', 'main.rs'), renderSource({ repo, version, cards, credit, portrait }));
   const check = run('check', [bin, 'check'], project);

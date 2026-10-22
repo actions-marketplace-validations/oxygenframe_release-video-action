@@ -12,6 +12,17 @@ inputs:
     description: End the video with "made with oxframe".
     required: false
     default: 'true'
+  tag:
+    description: >-
+      Release to render, such as v1.2.0. Default: the release that triggered
+      the workflow. Set it when the release is created in the same workflow
+      (a release made with GITHUB_TOKEN does not start other workflows).
+    required: false
+    default: ''
+  notes:
+    description: 'Release notes to render. Default: the notes of that release.'
+    required: false
+    default: ''
   token:
     description: Token that can upload the MP4 to the release.
     required: false
@@ -21,7 +32,7 @@ runs:
   steps:
     - uses: actions/checkout@v7
       with:
-        ref: ${{ github.event.release.tag_name }}
+        ref: ${{ inputs.tag || github.event.release.tag_name }}
     - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: 1.97.1
@@ -31,10 +42,23 @@ runs:
       run: |
         curl --proto '=https' --tlsv1.2 -fsSL https://github.com/oxygenframe/oxframe-cli/releases/latest/download/install.sh | sh
         echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    # The generated project builds the whole SDK; keep that build between
+    # runs. The key follows the CLI, which pins the SDK version.
+    - id: cache-key
+      shell: bash
+      run: echo "key=oxframe-release-video-${{ runner.os }}-$("$HOME/.local/bin/oxframe" --version | tr ' ' '-')" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ${{ runner.temp }}/oxframe-target
+        key: ${{ steps.cache-key.outputs.key }}
     - shell: bash
       env:
-        RELEASE_BODY: ${{ github.event.release.body }}
-        RELEASE_TAG: ${{ github.event.release.tag_name }}
+        CARGO_TARGET_DIR: ${{ runner.temp }}/oxframe-target
+        RELEASE_BODY: ${{ inputs.notes || github.event.release.body }}
+        RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
         RELEASE_REPO: ${{ github.repository }}
         PORTRAIT: ${{ inputs.portrait }}
         CREDIT: ${{ inputs.credit }}
