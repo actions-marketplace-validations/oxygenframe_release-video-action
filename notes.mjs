@@ -11,8 +11,6 @@
 /** @typedef {{ name: string, kind: 'title' | 'list' | 'end', title: string, subtitle: string, items: string[] }} Card */
 
 const MAX_ITEMS = 3;
-/** Characters a title card's subtitle holds without leaving the frame. */
-const MAX_SUBTITLE = 160;
 
 /** Release notes as sections. A heading owns the bullets (or the paragraph) under it. */
 export function parseNotes(markdown) {
@@ -105,10 +103,11 @@ export function storyboard(sections, { maxItems = MAX_ITEMS, portrait = false } 
       cards.push(titleCard(`section_${n++}`, heading, ''));
       continue;
     }
-    if (section.items.length === 1) {
-      // A long paragraph grows the subtitle past the frame, which `check`
-      // reports as out_of_frame on the card's text, not as text_overflow.
-      for (const part of chunks(section.items[0], MAX_SUBTITLE)) {
+    if (section.items.length === 1 && listHeight(section.items, portrait) > room) {
+      // A paragraph taller than the room goes on several cards, cut between
+      // sentences.
+      const perCard = Math.floor(room / 70) * (portrait ? 24 : 52);
+      for (const part of chunks(section.items[0], perCard)) {
         cards.push(titleCard(`section_${n++}`, heading, part));
       }
       continue;
@@ -331,6 +330,7 @@ async fn section(view: View, name: &str, heading: &str, tone: Ink, items: &[&str
     let (w, h) = (f64::from(w), f64::from(h));
     let width = w - 280.0;
     let glow = oxframe::nodes::current_theme().ink(tone);
+    // Added before the transition, so the heading comes in with the scene.
     let title = view.add(
         Txt::new()
             .text(heading)
@@ -340,10 +340,9 @@ async fn section(view: View, name: &str, heading: &str, tone: Ink, items: &[&str
             .max_width(width)
             .to_edge(Edge::Left)
             .y(-h * 0.34)
-            .opacity(0.0)
             .name(name),
     );
-    title.slide_in(Side::Left).await;
+    transition(Transition::slide(Dir::Left)).await;
     let list = view.add(
         Layout::new()
             .column()
@@ -434,7 +433,6 @@ function scene(card) {
   return `#[oxframe::scene]
 async fn ${card.name}(view: View) {
     sea(view);
-    transition(Transition::slide(Dir::Left)).await;
     section(view, ${rust(card.name)}, ${rust(card.title)}, ${tone(card.title)}, &[${items.map(rust).join(', ')}]).await;
 }`;
 }

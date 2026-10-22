@@ -72,8 +72,8 @@ test('a long list is several cards and a paragraph is one line', () => {
   assert.deepEqual(cards[0].items, ['fade between scenes', 'slide left']);
   assert.deepEqual(cards[1].items, ['a wipe']);
   assert.equal(cards[1].title, 'Added');
-  assert.equal(cards[2].kind, 'title');
-  assert.equal(cards[2].subtitle, 'One crash on the canvas.');
+  assert.equal(cards[2].title, 'Fixed');
+  assert.deepEqual(cards[2].items, ['One crash on the canvas.']);
 });
 
 test('long changes share a card only while they fit above the sea', () => {
@@ -171,18 +171,23 @@ test('text that does not fit a section card asks for a split', () => {
   assert.deepEqual(names, ['section_1', 'section_3', 'section_4']);
 });
 
-test('a long paragraph becomes several title cards, cut between sentences', () => {
-  const long =
-    'Shaders can read what is already drawn. A lens gets wet over the frame, a node ripples, and a scene gives way through rising water. All three run on the CPU, so a check and a render without a GPU paint them.';
+test('a paragraph taller than a card is cut between sentences', () => {
+  const sentence =
+    'Shaders can read what is already drawn, and a lens gets wet over the whole frame. ';
+  const long = sentence.repeat(12).trim();
   const cards = storyboard([{ heading: 'Release', items: [long] }]);
   assert.ok(cards.length > 1);
   for (const card of cards) {
     assert.equal(card.kind, 'title');
     assert.equal(card.title, 'Release');
-    assert.ok(card.subtitle.length <= 160, card.subtitle);
+    assert.ok(listHeight([card.subtitle]) <= 640, card.subtitle);
+    assert.ok(card.subtitle.endsWith('.'), card.subtitle);
   }
   assert.equal(cards.map((c) => c.subtitle).join(' '), long);
-  assert.ok(cards[0].subtitle.endsWith('.'));
+  // One that fits stays whole.
+  assert.deepEqual(storyboard([{ heading: 'Release', items: [sentence.trim()] }])[0].items, [
+    sentence.trim(),
+  ]);
 });
 
 test('a sentence longer than a card is cut between words', () => {
