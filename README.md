@@ -7,8 +7,10 @@
 [![A release video made by this Action: the version as a title, the changes as a list, then an end card](https://oxframe.dev/media/0.20.0/gallery/release.jpg)](https://oxframe.dev/media/0.20.0/gallery/release.mp4)
 
 A GitHub Action that turns a release's notes into a short oxframe video and
-attaches the MP4 to the release. No model call: headings and lists become
-title cards and bullet lists, with a slide between them.
+attaches the MP4 to the release. No model call: the version opens it, each
+section gets its heading in its color (added green, fixed blue, changed
+yellow, breaking red), and its changes are written on word by word, with a
+short halo over each one as it completes, over a calm sea along the bottom.
 
 ```yaml
 on:
@@ -20,14 +22,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: oxygenframe/release-video-action@v1.2.1
+      - uses: oxygenframe/release-video-action@v1.3.0
         with:
           portrait: true
 ```
 
-`oxframe check` runs first. A card that cannot fit its text is split into two
-cards and checked again, not clipped. Each card then holds for a second, so a
-line that is long enough to read is not flagged as too fast. The end card says
+`oxframe check` runs first. Changes share a card only while they fit above
+the sea; a card that still cannot fit its text is split into two cards and
+checked again, not clipped. Each change holds long enough to read. The end card says
 "made with oxframe" unless `credit` is `false`. A `[theme]` table in the
 repository's `oxframe.toml` is copied onto the generated project.
 
@@ -39,7 +41,7 @@ any time later, with `tag`; the notes are read from the release:
 
 ```yaml
       - run: gh release create "$GITHUB_REF_NAME" --notes-file notes.md
-      - uses: oxygenframe/release-video-action@v1.2.1
+      - uses: oxygenframe/release-video-action@v1.3.0
         with:
           tag: ${{ github.ref_name }}
 ```

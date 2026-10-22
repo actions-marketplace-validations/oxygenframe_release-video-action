@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { chunks, overflowNames, parseNotes, renderSource, splitOverflow, storyboard } from './notes.mjs';
+import {
+  chunks,
+  overflowNames,
+  parseNotes,
+  renderSource,
+  splitOverflow,
+  storyboard,
+  tone,
+  listHeight,
+} from './notes.mjs';
 
 const notes = `
 # oxframe 0.6.0
@@ -56,15 +65,44 @@ Upgrade with \`oxframe upgrade\`.
   ]);
 });
 
-test('a long list is several cards and a short one is a title', () => {
+test('a long list is several cards and a paragraph is one line', () => {
   const cards = storyboard(parseNotes(notes), { maxItems: 2 });
-  assert.equal(cards[0].kind, 'title');
+  assert.equal(cards[0].kind, 'list');
   assert.equal(cards[0].title, 'Added');
-  assert.equal(cards[1].kind, 'list');
-  assert.deepEqual(cards[1].items, ['fade between scenes', 'slide left']);
-  assert.deepEqual(cards[2].items, ['a wipe']);
-  assert.equal(cards[3].kind, 'title');
-  assert.equal(cards[3].subtitle, 'One crash on the canvas.');
+  assert.deepEqual(cards[0].items, ['fade between scenes', 'slide left']);
+  assert.deepEqual(cards[1].items, ['a wipe']);
+  assert.equal(cards[1].title, 'Added');
+  assert.equal(cards[2].kind, 'title');
+  assert.equal(cards[2].subtitle, 'One crash on the canvas.');
+});
+
+test('long changes share a card only while they fit above the sea', () => {
+  const long = 'x'.repeat(250);
+  const short = 'a short change';
+  const cards = storyboard([{ heading: 'Added', items: [long, long, short, short] }]);
+  assert.deepEqual(
+    cards.map((card) => card.items.length),
+    [1, 3],
+  );
+  assert.ok(listHeight([long]) <= 640);
+  // A 9:16 frame is narrower: lines wrap sooner, and it is taller.
+  assert.ok(listHeight([short], true) >= listHeight([short]));
+  assert.deepEqual(
+    storyboard([{ heading: 'Added', items: [short, short, short, short] }], { maxItems: 3 }).map(
+      (card) => card.items.length,
+    ),
+    [3, 1],
+  );
+});
+
+test('a section takes its color from its heading', () => {
+  assert.equal(tone('Added'), 'Success');
+  assert.equal(tone('New features'), 'Success');
+  assert.equal(tone('Fixed'), 'Accent');
+  assert.equal(tone('Changed'), 'Warning');
+  assert.equal(tone('Breaking changes'), 'Danger');
+  assert.equal(tone("What's new"), 'Success');
+  assert.equal(tone('Notes'), 'Accent');
 });
 
 test('the scene waits on a transition and names every card', () => {
@@ -74,16 +112,16 @@ test('the scene waits on a transition and names every card', () => {
     cards: storyboard(parseNotes(notes), { maxItems: 4 }),
     portrait: true,
   });
-  assert.match(source, /TitleCard::new\("v0\.6\.0"\)\.subtitle\("oxygenframe\/oxframe"\)/);
+  assert.match(source, /big\(view, "oxygenframe\/oxframe", "v0\.6\.0", ""\)/);
   assert.match(source, /transition\(Transition::slide\(Dir::Left\)\)\.await/);
-  assert.match(source, /BulletList::new\(\[/);
-  assert.match(source, /EndCard::new\("v0\.6\.0"\)\.note\("made with oxframe"\)/);
+  assert.match(source, /section\(view, "section_0", "Added", Success, &\["fade between scenes", /);
+  assert.match(source, /big\(view, "", "v0\.6\.0", "made with oxframe"\)/);
   assert.match(source, /transition\(Transition::fade\(\)\)\.await/);
   assert.match(source, /\.size\(1080, 1920\)/);
   assert.match(source, /\.main\(\);/);
-  assert.match(source, /\.name\("section_0"\)/);
+  assert.match(source, /\.name\(name\)/);
   assert.doesNotMatch(source, /wait_for\(0\.[0-9]/);
-  assert.match(source, /wait_for\(1\.0\)\.await/);
+  assert.match(source, /wait_for\(1\.2\)\.await/);
 });
 
 test('the credit can be left off', () => {
@@ -102,8 +140,8 @@ test('quotes in a note stay inside the Rust string', () => {
     version: 'v1',
     cards: storyboard([{ heading: 'Say "hi"', items: [] }]),
   });
-  assert.match(source, /TitleCard::new\("Say \\"hi\\""\)/);
-  assert.match(source, /\.subtitle\("a \\"b\\""\)/);
+  assert.match(source, /section\(view, "section_0", "Say \\"hi\\"", Accent, &\[\]\)/);
+  assert.match(source, /big\(view, "a \\"b\\"", "v1", ""\)/);
 });
 
 test('a list check failed is split in half and renamed', () => {
@@ -116,19 +154,21 @@ test('a list check failed is split in half and renamed', () => {
   assert.deepEqual(lists[1].items, ['c', 'd']);
   assert.deepEqual(
     next.map((card) => card.name),
-    ['section_0', 'section_1', 'section_2'],
+    ['section_0', 'section_1'],
   );
 });
 
-test('only text_overflow on a section card asks for a split', () => {
+test('text that does not fit a section card asks for a split', () => {
   const names = overflowNames({
     issues: [
       { rule: 'text_overflow', severity: 'error', node: 'section_1' },
+      { rule: 'out_of_frame', severity: 'error', node: 'section_3' },
+      { rule: 'text_overlap', severity: 'error', node: 'section_4' },
       { rule: 'text_overflow', severity: 'warning', node: 'section_2' },
       { rule: 'low_contrast', severity: 'error', node: 'section_0' },
     ],
   });
-  assert.deepEqual(names, ['section_1']);
+  assert.deepEqual(names, ['section_1', 'section_3', 'section_4']);
 });
 
 test('a long paragraph becomes several title cards, cut between sentences', () => {

@@ -30,7 +30,7 @@ run('init', [bin, 'init', 'release'], root);
 const project = join(root, 'release');
 copyTheme(process.cwd(), project);
 
-let cards = storyboard(parseNotes(body));
+let cards = storyboard(parseNotes(body), { portrait });
 for (let attempt = 0; attempt < 6; attempt++) {
   writeFileSync(join(project, 'src', 'main.rs'), renderSource({ repo, version, cards, credit, portrait }));
   const check = run('check', [bin, 'check'], project);
