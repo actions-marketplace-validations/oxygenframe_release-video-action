@@ -4,7 +4,7 @@
 [![license](https://img.shields.io/badge/license-MIT%20or%20Apache--2.0-blue)](#license)
 [![made with oxframe](https://img.shields.io/badge/made%20with-oxframe-e13238)](https://oxframe.dev)
 
-[![A release video made by this Action: the version as a title, the changes as a list, then an end card](https://oxframe.dev/media/0.20.0/gallery/release.jpg)](https://oxframe.dev/media/0.20.0/gallery/release.mp4)
+[![A release video made by this Action: the Added section in green, its changes written on word by word](https://oxframe.dev/media/0.20.3/gallery/release.jpg)](https://oxframe.dev/media/0.20.3/gallery/release.mp4)
 
 A GitHub Action that turns a release's notes into a short oxframe video and
 attaches the MP4 to the release. No model call: the version opens it, each
