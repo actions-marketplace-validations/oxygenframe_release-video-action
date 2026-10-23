@@ -120,6 +120,16 @@ export function storyboard(sections, { maxItems = MAX_ITEMS, portrait = false } 
       group = [];
     };
     for (const item of section.items) {
+      if (listHeight([item], portrait) > room) {
+        // One change taller than the room: its own cards, cut between
+        // sentences, one bullet each.
+        flush();
+        const perCard = Math.floor(room / 70) * (portrait ? 24 : 52);
+        for (const part of chunks(item, perCard)) {
+          cards.push({ name: `section_${n++}`, kind: 'list', title: heading, subtitle: '', items: [part] });
+        }
+        continue;
+      }
       if (group.length && (group.length >= maxItems || listHeight([...group, item], portrait) > room))
         flush();
       group.push(item);
@@ -168,6 +178,15 @@ function halves(card) {
     return [
       { ...card, items: card.items.slice(0, mid) },
       { ...card, kind: 'list', items: card.items.slice(mid) },
+    ];
+  }
+  if (card.kind === 'list' && card.items.length === 1) {
+    // One bullet that does not fit: split the bullet, keep the heading.
+    const split = splitWords(card.items[0]);
+    if (!split) return null;
+    return [
+      { ...card, items: [split[0]] },
+      { ...card, items: [split[1]] },
     ];
   }
   const text = card.subtitle || card.title;
