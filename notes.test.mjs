@@ -201,3 +201,30 @@ test('text before the first heading is "What\'s new", not a second version card'
   const cards = storyboard(parseNotes('Parallel rendering.\n\n### Added\n\n- jobs'));
   assert.equal(cards[0].title, "What's new");
 });
+
+test('one change taller than a card among short ones gets its own cards', () => {
+  const long = Array.from({ length: 12 }, (_, i) => `Sentence ${i} says a fair amount about the change.`).join(' ');
+  const cards = storyboard([{ heading: 'Added', items: ['short one', long, 'short two'] }]);
+  const lists = cards.filter((card) => card.kind === 'list');
+  assert.ok(lists.length >= 4, `${lists.length} cards`);
+  assert.deepEqual(lists[0].items, ['short one']);
+  assert.deepEqual(lists.at(-1).items, ['short two']);
+  for (const card of lists.slice(1, -1)) {
+    assert.equal(card.items.length, 1);
+    assert.equal(card.title, 'Added');
+  }
+  assert.equal(lists.slice(1, -1).map((card) => card.items[0]).join(' '), long);
+});
+
+test('a one-bullet card that check rejects splits the bullet, not the heading', () => {
+  const cards = [{ name: 'section_0', kind: 'list', title: 'Added', subtitle: '', items: ['alpha beta gamma delta'] }];
+  const next = splitOverflow(cards, ['section_0']);
+  assert.ok(next);
+  assert.deepEqual(
+    next.map((card) => [card.title, card.items]),
+    [
+      ['Added', ['alpha beta']],
+      ['Added', ['gamma delta']],
+    ],
+  );
+});
