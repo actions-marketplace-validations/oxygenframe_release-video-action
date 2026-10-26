@@ -55,7 +55,9 @@ for (let attempt = 0; attempt < 6; attempt++) {
   cards = smaller;
 }
 
-if ((process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN) && body.trim()) {
+const agent =
+  process.env.AGENT_COMMAND || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN;
+if (agent && body.trim()) {
   const template = readFileSync(join(project, 'src', 'main.rs'), 'utf8');
   const { storyboardScene } = await import('./storyboard.mjs');
   let designed = false;
