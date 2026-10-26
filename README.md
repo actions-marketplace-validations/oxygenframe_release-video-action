@@ -7,7 +7,7 @@
 [![A release video made by this Action: the Added section in green, its changes written on word by word](https://oxframe.dev/media/0.20.3/gallery/release.jpg)](https://oxframe.dev/media/0.20.3/gallery/release.mp4)
 
 A GitHub Action that turns a release's notes into a short oxframe video and
-attaches the MP4 to the release. No model call: the version opens it, each
+attaches the MP4 to the release. By default there is no model call: the version opens it, each
 section gets its heading in its color (added green, fixed blue, changed
 yellow, breaking red), and its changes are written on word by word, with a
 short halo over each one as it completes, over a calm sea along the bottom.
@@ -47,6 +47,26 @@ any time later, with `tag`; the notes are read from the release:
 ```
 
 `notes` renders text of your own instead of the release's notes.
+
+## A scene designed by Claude
+
+With `anthropic-api-key`, Claude reads the notes, comes up with a visual
+treatment for them (a diagram of what was fixed, a before and after, a
+counter) and writes the scene from the generated project's agent docs.
+`oxframe check` reviews each version, and its report goes back to Claude
+until the scene passes (at most five tries). If none passes, or the call
+fails, the template above renders the notes as usual. The treatment is
+printed in the job log.
+
+```yaml
+      - uses: oxygenframe/release-video-action@v1.4.0
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # model: claude-opus-5-5
+```
+
+Each video is one to five Claude requests with the oxframe docs as a cached
+prompt.
 
 The generated project builds the oxframe SDK. The build is cached between
 runs (per CLI version), so only the first video after a new oxframe release

@@ -1,5 +1,7 @@
 // GitHub Action entry. Release notes become a project, `oxframe check`
 // splits a card that does not fit, then `oxframe render --cpu` writes the MP4.
+// With ANTHROPIC_API_KEY, Claude designs the scene instead (storyboard.mjs);
+// the template is the fallback.
 
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, existsSync, cpSync } from 'node:fs';
@@ -43,6 +45,31 @@ for (let attempt = 0; attempt < 6; attempt++) {
     process.exit(check.status || 1);
   }
   cards = smaller;
+}
+
+if (process.env.ANTHROPIC_API_KEY && body.trim()) {
+  const template = readFileSync(join(project, 'src', 'main.rs'), 'utf8');
+  const { storyboardScene } = await import('./storyboard.mjs');
+  let designed = false;
+  try {
+    designed = await storyboardScene({
+      notes: body,
+      repo,
+      version,
+      portrait,
+      credit,
+      project,
+      bin,
+      template,
+      model: process.env.MODEL || 'claude-opus-5-5',
+    });
+  } catch (err) {
+    console.error(`storyboard: ${err?.message ?? err}`);
+  }
+  if (!designed) {
+    console.error('storyboard: rendering the template instead');
+    writeFileSync(join(project, 'src', 'main.rs'), template);
+  }
 }
 
 run('render', [bin, 'render', '--cpu'], project);
