@@ -1,10 +1,12 @@
-// With an Anthropic API key: Claude reads the release notes, comes up with a
-// visual treatment for them, and writes the scene; `oxframe check` reviews
+// With an Anthropic API key, or a Claude Code token (`claude setup-token`,
+// for a Claude subscription): Claude reads the release notes, comes up with
+// a visual treatment for them, and writes the scene; `oxframe check` reviews
 // each version and its report goes back to Claude until the scene passes.
 // Returns false when no scene passed, and the caller renders the template.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const ATTEMPTS = 5;
@@ -14,8 +16,7 @@ const ATTEMPTS = 5;
  *   credit: boolean, project: string, bin: string, template: string, model: string }} spec
  */
 export async function storyboardScene(spec) {
-  const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic();
+  const ask = process.env.ANTHROPIC_API_KEY ? await apiClient(spec.model) : claudeCode(spec.model);
 
   // The project's own agent docs (written by `oxframe init`) teach the API
   // of the SDK version it builds with.
@@ -56,6 +57,7 @@ Then write the whole src/main.rs in one \`\`\`rust block.
 - Open on ${spec.repo} ${spec.version}.${spec.credit ? ' End on a card that says "made with oxframe".' : ''}
 - Only the API in the docs above; no files, images, fonts, voice, video or network.
 - Colors from the theme, so a repository's [theme] applies.
+- Use the frame: type and diagrams large enough to read on a phone, not small panels in a field of empty space.
 
 This is the plain version the action renders without you, a scene that builds and passes check:
 
@@ -67,19 +69,7 @@ ${spec.template}
 
   const main = join(spec.project, 'src', 'main.rs');
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
-    const reply = await client.beta.messages
-      .stream({
-        model: spec.model,
-        max_tokens: 64000,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'high' },
-        system,
-        messages,
-        betas: ['server-side-fallback-2026-07-01'],
-        // @ts-expect-error The SDK's types may not know the default fallback yet.
-        fallbacks: 'default',
-      })
-      .finalMessage();
+    const reply = await ask(system, messages);
     if (reply.stop_reason === 'refusal') {
       console.error('storyboard: the model declined the request');
       return false;
@@ -112,6 +102,63 @@ ${spec.template}
     });
   }
   return false;
+}
+
+/** Claude through the Messages API (ANTHROPIC_API_KEY). */
+async function apiClient(model) {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic();
+  return (system, messages) =>
+    client.beta.messages
+      .stream({
+        model,
+        max_tokens: 64000,
+        thinking: { type: 'adaptive' },
+        output_config: { effort: 'high' },
+        system,
+        messages,
+        betas: ['server-side-fallback-2026-07-01'],
+        // @ts-expect-error The SDK's types may not know the default fallback yet.
+        fallbacks: 'default',
+      })
+      .finalMessage();
+}
+
+/**
+ * Claude through Claude Code (`claude -p`, CLAUDE_CODE_OAUTH_TOKEN): one
+ * session without tools, resumed for each follow-up message. Answers in the
+ * Messages API's shape.
+ */
+export function claudeCode(model, bin = process.env.CLAUDE_BIN || 'claude') {
+  // Away from the repository, so none of its settings or files apply.
+  const cwd = mkdtempSync(join(tmpdir(), 'oxframe-storyboard-'));
+  let session = null;
+  return async (system, messages) => {
+    const last = messages[messages.length - 1].content;
+    const args = ['-p', '--model', model, '--effort', 'high', '--output-format', 'json'];
+    args.push('--tools', '', '--strict-mcp-config', '--setting-sources', '');
+    if (session) {
+      args.push('--resume', session);
+    } else {
+      const file = join(cwd, 'system.md');
+      writeFileSync(file, system.map((block) => block.text).join('\n'));
+      args.push('--system-prompt-file', file);
+    }
+    const env = { ...process.env };
+    delete env.ANTHROPIC_API_KEY;
+    const run = spawnSync(bin, args, { cwd, env, input: last, encoding: 'utf8', maxBuffer: 1 << 28 });
+    if (run.error) throw run.error;
+    let out;
+    try {
+      out = JSON.parse(run.stdout);
+    } catch {
+      throw new Error(`claude -p failed: ${(run.stderr || run.stdout).slice(-2000)}`);
+    }
+    if (out.is_error) throw new Error(`claude -p: ${out.result}`);
+    session = out.session_id;
+    const text = String(out.result ?? '');
+    return { stop_reason: out.stop_reason ?? 'end_turn', content: [{ type: 'text', text }] };
+  };
 }
 
 /** The last ```rust block of a reply. */

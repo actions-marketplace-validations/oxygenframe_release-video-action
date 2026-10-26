@@ -1,6 +1,7 @@
 // GitHub Action entry. Release notes become a project, `oxframe check`
 // splits a card that does not fit, then `oxframe render --cpu` writes the MP4.
-// With ANTHROPIC_API_KEY, Claude designs the scene instead (storyboard.mjs);
+// With ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, Claude designs the scene
+// instead (storyboard.mjs);
 // the template is the fallback.
 
 import { spawnSync } from 'node:child_process';
@@ -47,7 +48,7 @@ for (let attempt = 0; attempt < 6; attempt++) {
   cards = smaller;
 }
 
-if (process.env.ANTHROPIC_API_KEY && body.trim()) {
+if ((process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN) && body.trim()) {
   const template = readFileSync(join(project, 'src', 'main.rs'), 'utf8');
   const { storyboardScene } = await import('./storyboard.mjs');
   let designed = false;

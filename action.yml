@@ -30,8 +30,14 @@ inputs:
       one, or when no scene passes, the template renders the notes.
     required: false
     default: ''
+  claude-code-oauth-token:
+    description: >-
+      The same through Claude Code with a Claude subscription instead of an
+      API key: the token `claude setup-token` prints.
+    required: false
+    default: ''
   model:
-    description: Claude model for `anthropic-api-key`.
+    description: Claude model for `anthropic-api-key` or `claude-code-oauth-token`.
     required: false
     default: claude-opus-5-5
   token:
@@ -68,9 +74,13 @@ runs:
     - if: inputs.anthropic-api-key != ''
       shell: bash
       run: npm ci --omit=dev --prefix "${{ github.action_path }}"
+    - if: inputs.claude-code-oauth-token != '' && inputs.anthropic-api-key == ''
+      shell: bash
+      run: npm install -g @anthropic-ai/claude-code@2.1.310
     - shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
         MODEL: ${{ inputs.model }}
         CARGO_TARGET_DIR: ${{ runner.temp }}/oxframe-target
         RELEASE_BODY: ${{ inputs.notes || github.event.release.body }}
