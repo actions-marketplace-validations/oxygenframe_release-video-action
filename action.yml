@@ -23,6 +23,17 @@ inputs:
     description: 'Release notes to render. Default: the notes of that release.'
     required: false
     default: ''
+  anthropic-api-key:
+    description: >-
+      With a key, Claude reads the notes, comes up with a visual treatment
+      and writes the scene; `oxframe check` reviews it until it passes. Without
+      one, or when no scene passes, the template renders the notes.
+    required: false
+    default: ''
+  model:
+    description: Claude model for `anthropic-api-key`.
+    required: false
+    default: claude-opus-5-5
   token:
     description: Token that can upload the MP4 to the release.
     required: false
@@ -54,8 +65,13 @@ runs:
           ~/.cargo/git
           ${{ runner.temp }}/oxframe-target
         key: ${{ steps.cache-key.outputs.key }}
+    - if: inputs.anthropic-api-key != ''
+      shell: bash
+      run: npm ci --omit=dev --prefix "${{ github.action_path }}"
     - shell: bash
       env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        MODEL: ${{ inputs.model }}
         CARGO_TARGET_DIR: ${{ runner.temp }}/oxframe-target
         RELEASE_BODY: ${{ inputs.notes || github.event.release.body }}
         RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
