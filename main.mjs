@@ -1,6 +1,7 @@
 // GitHub Action entry. Release notes become a project, `oxframe check`
 // splits a card that does not fit, then `oxframe render --cpu` writes the MP4.
-// With ANTHROPIC_API_KEY, Claude designs the scene instead (storyboard.mjs);
+// With ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN, Claude designs the scene
+// instead (storyboard.mjs);
 // the template is the fallback.
 
 import { spawnSync } from 'node:child_process';
@@ -9,6 +10,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { overflowNames, parseNotes, renderSource, splitOverflow, storyboard } from './notes.mjs';
+
+// A Claude Code token (`claude setup-token`) passed as the API key: use it
+// as what it is.
+if (process.env.ANTHROPIC_API_KEY?.trim().startsWith('sk-ant-oat')) {
+  process.env.CLAUDE_CODE_OAUTH_TOKEN ||= process.env.ANTHROPIC_API_KEY.trim();
+  delete process.env.ANTHROPIC_API_KEY;
+}
 
 const repo = process.env.RELEASE_REPO || 'oxygenframe/oxframe';
 const version = process.env.RELEASE_TAG || 'release';
@@ -47,7 +55,9 @@ for (let attempt = 0; attempt < 6; attempt++) {
   cards = smaller;
 }
 
-if (process.env.ANTHROPIC_API_KEY && body.trim()) {
+const agent =
+  process.env.AGENT_COMMAND || process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN;
+if (agent && body.trim()) {
   const template = readFileSync(join(project, 'src', 'main.rs'), 'utf8');
   const { storyboardScene } = await import('./storyboard.mjs');
   let designed = false;
