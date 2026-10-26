@@ -11,6 +11,13 @@ import { join } from 'node:path';
 
 import { overflowNames, parseNotes, renderSource, splitOverflow, storyboard } from './notes.mjs';
 
+// A Claude Code token (`claude setup-token`) passed as the API key: use it
+// as what it is.
+if (process.env.ANTHROPIC_API_KEY?.trim().startsWith('sk-ant-oat')) {
+  process.env.CLAUDE_CODE_OAUTH_TOKEN ||= process.env.ANTHROPIC_API_KEY.trim();
+  delete process.env.ANTHROPIC_API_KEY;
+}
+
 const repo = process.env.RELEASE_REPO || 'oxygenframe/oxframe';
 const version = process.env.RELEASE_TAG || 'release';
 // With only a tag (`tag:` input), read the notes of that release.
