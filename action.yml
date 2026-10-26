@@ -37,6 +37,14 @@ inputs:
       as `anthropic-api-key`, it is used the same way).
     required: false
     default: ''
+  agent-command:
+    description: >-
+      Any other agent CLI, installed and signed in by earlier steps: a bash
+      command that gets the prompt on stdin and answers on stdout (or writes
+      the answer to $REPLY_FILE), such as
+      `codex exec --skip-git-repo-check --ephemeral -s read-only -o "$REPLY_FILE"`.
+    required: false
+    default: ''
   model:
     description: Claude model for `anthropic-api-key` or `claude-code-oauth-token`.
     required: false
@@ -83,6 +91,7 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         CLAUDE_CODE_OAUTH_TOKEN: ${{ inputs.claude-code-oauth-token }}
+        AGENT_COMMAND: ${{ inputs.agent-command }}
         MODEL: ${{ inputs.model }}
         CARGO_TARGET_DIR: ${{ runner.temp }}/oxframe-target
         RELEASE_BODY: ${{ inputs.notes || github.event.release.body }}

@@ -1,5 +1,5 @@
-// With an Anthropic API key, or a Claude Code token (`claude setup-token`,
-// for a Claude subscription): Claude reads the release notes, comes up with
+// With an LLM agent (an Anthropic API key, a Claude Code token from
+// `claude setup-token`, or any agent CLI as AGENT_COMMAND): the model reads the release notes, comes up with
 // a visual treatment for them, and writes the scene; `oxframe check` reviews
 // each version and its report goes back to Claude until the scene passes.
 // Returns false when no scene passed, and the caller renders the template.
@@ -16,7 +16,11 @@ const ATTEMPTS = 5;
  *   credit: boolean, project: string, bin: string, template: string, model: string }} spec
  */
 export async function storyboardScene(spec) {
-  const ask = process.env.ANTHROPIC_API_KEY ? await apiClient(spec.model) : claudeCode(spec.model);
+  const ask = process.env.AGENT_COMMAND
+    ? agentCommand(process.env.AGENT_COMMAND)
+    : process.env.ANTHROPIC_API_KEY
+      ? await apiClient(spec.model)
+      : claudeCode(spec.model);
 
   // The project's own agent docs (written by `oxframe init`) teach the API
   // of the SDK version it builds with.
@@ -159,6 +163,46 @@ export function claudeCode(model, bin = process.env.CLAUDE_BIN || 'claude') {
     const text = String(out.result ?? '');
     return { stop_reason: out.stop_reason ?? 'end_turn', content: [{ type: 'text', text }] };
   };
+}
+
+/**
+ * Any agent CLI (Codex, Gemini, …): `command` runs in bash with the whole
+ * conversation so far on stdin and answers on stdout, or in the file named
+ * by $REPLY_FILE when it writes one.
+ */
+export function agentCommand(command) {
+  const cwd = mkdtempSync(join(tmpdir(), 'oxframe-storyboard-'));
+  let turn = 0;
+  return async (system, messages) => {
+    const transcript = [
+      system.map((block) => block.text).join('\n'),
+      ...messages.map((m) => `<${m.role}>\n${textOf(m.content)}\n</${m.role}>`),
+      messages.length > 1 ? 'Answer the last <user> message.' : '',
+    ].join('\n\n');
+    const replyFile = join(cwd, `reply-${++turn}.md`);
+    const run = spawnSync('bash', ['-c', command], {
+      cwd,
+      env: { ...process.env, REPLY_FILE: replyFile },
+      input: transcript,
+      encoding: 'utf8',
+      maxBuffer: 1 << 28,
+    });
+    if (run.error) throw run.error;
+    if (run.status !== 0) {
+      throw new Error(`agent-command exited ${run.status}: ${(run.stderr || '').slice(-2000)}`);
+    }
+    const text = existsSync(replyFile) ? readFileSync(replyFile, 'utf8') : run.stdout;
+    return { stop_reason: 'end_turn', content: [{ type: 'text', text }] };
+  };
+}
+
+function textOf(content) {
+  return typeof content === 'string'
+    ? content
+    : content
+        .filter((block) => block.type === 'text')
+        .map((block) => block.text)
+        .join('\n');
 }
 
 /** The last ```rust block of a reply. */
