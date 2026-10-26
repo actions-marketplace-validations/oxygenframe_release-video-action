@@ -37,7 +37,7 @@ jobs:
 `oxframe check` runs first. Changes share a card only while they fit above
 the sea; a card that still cannot fit its text is split into two cards and
 checked again, not clipped. Each change holds long enough to read. The end card says
-"made by Oxframe" (Oxframe in the colors of its logo) unless `credit` is `false`. A `[theme]` table in the
+"made by Oxframe" (with the oxframe logo) unless `credit` is `false`. A `[theme]` table in the
 repository's `oxframe.toml` is copied onto the generated project.
 
 The frame is 16:9. `portrait: true` renders 1080×1920 instead.
