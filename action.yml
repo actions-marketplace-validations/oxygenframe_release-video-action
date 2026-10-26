@@ -33,7 +33,8 @@ inputs:
   claude-code-oauth-token:
     description: >-
       The same through Claude Code with a Claude subscription instead of an
-      API key: the token `claude setup-token` prints.
+      API key: the token `claude setup-token` prints (`sk-ant-oat…`; passed
+      as `anthropic-api-key`, it is used the same way).
     required: false
     default: ''
   model:
@@ -74,7 +75,8 @@ runs:
     - if: inputs.anthropic-api-key != ''
       shell: bash
       run: npm ci --omit=dev --prefix "${{ github.action_path }}"
-    - if: inputs.claude-code-oauth-token != '' && inputs.anthropic-api-key == ''
+    # Also with only anthropic-api-key: it may hold a Claude Code token.
+    - if: inputs.claude-code-oauth-token != '' || inputs.anthropic-api-key != ''
       shell: bash
       run: npm install -g @anthropic-ai/claude-code@2.1.310
     - shell: bash
