@@ -58,7 +58,7 @@ First write the treatment: for each scene, what is on screen, what moves and why
 
 Then write the whole src/main.rs in one \`\`\`rust block.
 - ${frame}, 20 to 60 seconds; text holds long enough to read.
-- Open on ${spec.repo} ${spec.version}.${spec.credit ? ' End on a card that says "made with oxframe".' : ''}
+- Open on ${spec.repo} ${spec.version}.${spec.credit ? ' End on a card that says "made by Oxframe", with "Ox" in #e13238 and "frame" in #68abdf (the colors of the oxframe logo; rich text: span("Ox").color(color!("#e13238"))).' : ''}
 - Only the API in the docs above; no files, images, fonts, voice, video or network.
 - Colors from the theme, so a repository's [theme] applies.
 - Use the frame: type and diagrams large enough to read on a phone, not small panels in a field of empty space.

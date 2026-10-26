@@ -2,7 +2,7 @@
 
 [![release](https://img.shields.io/github/v/release/oxygenframe/release-video-action)](https://github.com/oxygenframe/release-video-action/releases)
 [![license](https://img.shields.io/badge/license-MIT%20or%20Apache--2.0-blue)](#license)
-[![made with oxframe](https://img.shields.io/badge/made%20with-oxframe-e13238)](https://oxframe.dev)
+[![made by Oxframe](https://oxframe.dev/badge.svg)](https://oxframe.dev)
 
 [![A release video made by this Action: the Added section in green, its changes written on word by word](https://oxframe.dev/media/0.20.3/gallery/release.jpg)](https://oxframe.dev/media/0.20.3/gallery/release.mp4)
 
@@ -37,7 +37,7 @@ jobs:
 `oxframe check` runs first. Changes share a card only while they fit above
 the sea; a card that still cannot fit its text is split into two cards and
 checked again, not clipped. Each change holds long enough to read. The end card says
-"made with oxframe" unless `credit` is `false`. A `[theme]` table in the
+"made by Oxframe" (Oxframe in the colors of its logo) unless `credit` is `false`. A `[theme]` table in the
 repository's `oxframe.toml` is copied onto the generated project.
 
 The frame is 16:9. `portrait: true` renders 1080×1920 instead.

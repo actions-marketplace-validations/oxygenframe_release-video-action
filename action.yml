@@ -9,7 +9,7 @@ inputs:
     required: false
     default: 'false'
   credit:
-    description: End the video with "made with oxframe".
+    description: End the video with "made by Oxframe".
     required: false
     default: 'true'
   tag:
