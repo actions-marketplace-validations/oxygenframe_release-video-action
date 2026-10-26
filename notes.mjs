@@ -416,17 +416,27 @@ async fn section(view: View, name: &str, heading: &str, tone: Ink, items: &[&str
     }
 }
 
-/// "made by Oxframe", with Oxframe in the colors of its logo.
-fn made_by() -> Vec<RichSpan> {
-    vec![
-        span("made by "),
-        span("Ox").color(color!("#e13238")),
-        span("frame").color(color!("#68abdf")),
-    ]
+/// "made by", the oxframe logo and "Oxframe" on one line, faded in.
+async fn made_by(view: View, y: f64) {
+    let row = view.add(Group::new().y(y).opacity(0.0));
+    let lead = row.add(Txt::new().text("made by").h2().fill(Muted));
+    let name = row.add(Txt::new().text("Oxframe").h2().weight(700.0).fill(Text));
+    // The logo: the favicon's square and the circle that overlaps it.
+    let line = lead.size().1;
+    let (height, gap) = (line * 0.6, line * 0.26);
+    let unit = height / 14.0;
+    let (lw, nw, mark) = (lead.size().0, name.size().0, 26.0 * unit);
+    let left = -(lw + gap + mark + gap + nw) / 2.0;
+    lead.x().set(left + lw / 2.0);
+    let x = left + lw + gap;
+    row.add(Rect::new().size(height).radius(3.0 * unit).fill(color!("#e13238")).x(x + height / 2.0));
+    row.add(Circle::new().size(height).fill(color!("#68abdf")).x(x + 19.0 * unit));
+    name.x().set(x + mark + gap + nw / 2.0);
+    row.fade_in().await;
 }
 
 /// The version in large type, its halo, and a line under it.
-async fn big(view: View, above: &str, version: &str, below: Vec<RichSpan>) {
+async fn big(view: View, above: &str, version: &str, credit: bool) {
     let top = view.add(Txt::new().text(above).h2().fill(Muted).y(-110.0).opacity(0.0));
     let label = view.add(
         Txt::new()
@@ -438,10 +448,11 @@ async fn big(view: View, above: &str, version: &str, below: Vec<RichSpan>) {
             .fill(rest())
             .opacity(0.0),
     );
-    let bottom = view.add(Txt::new().rich(below).h2().fill(Muted).y(150.0).opacity(0.0));
     all((top.fade_in(), label.slide_in(Side::Bottom))).await;
     halo(label, oxframe::nodes::current_theme().ink(Accent)).await;
-    bottom.fade_in().await;
+    if credit {
+        made_by(view, 150.0).await;
+    }
     // oxframe check flags text that is readable and on screen for under 0.8s.
     wait_for(1.2).await;
 }`;
@@ -450,7 +461,7 @@ function opening(repo, version) {
   return `#[oxframe::scene]
 async fn version(view: View) {
     sea(view);
-    big(view, ${rust(repo)}, ${rust(version)}, vec![]).await;
+    big(view, ${rust(repo)}, ${rust(version)}, false).await;
 }`;
 }
 
@@ -471,7 +482,7 @@ function closing(version, credit) {
 async fn credits(view: View) {
     sea(view);
     transition(Transition::fade()).await;
-    big(view, "", ${rust(version)}, ${credit ? 'made_by()' : 'vec![]'}).await;
+    big(view, "", ${rust(version)}, ${credit}).await;
 }`;
 }
 
