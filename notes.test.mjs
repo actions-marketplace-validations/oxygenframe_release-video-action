@@ -112,10 +112,10 @@ test('the scene waits on a transition and names every card', () => {
     cards: storyboard(parseNotes(notes), { maxItems: 4 }),
     portrait: true,
   });
-  assert.match(source, /big\(view, "oxygenframe\/oxframe", "v0\.6\.0", ""\)/);
+  assert.match(source, /big\(view, "oxygenframe\/oxframe", "v0\.6\.0", vec!\[\]\)/);
   assert.match(source, /transition\(Transition::slide\(Dir::Left\)\)\.await/);
   assert.match(source, /section\(view, "section_0", "Added", Success, &\["fade between scenes", /);
-  assert.match(source, /big\(view, "", "v0\.6\.0", "made with oxframe"\)/);
+  assert.match(source, /big\(view, "", "v0\.6\.0", made_by\(\)\)/);
   assert.match(source, /transition\(Transition::fade\(\)\)\.await/);
   assert.match(source, /\.size\(1080, 1920\)/);
   assert.match(source, /\.main\(\);/);
@@ -131,7 +131,7 @@ test('the credit can be left off', () => {
     cards: [],
     credit: false,
   });
-  assert.doesNotMatch(source, /made with oxframe/);
+  assert.doesNotMatch(source, /big\(view, "", "v0\.6\.0", made_by\(\)\)/);
 });
 
 test('quotes in a note stay inside the Rust string', () => {
@@ -141,7 +141,7 @@ test('quotes in a note stay inside the Rust string', () => {
     cards: storyboard([{ heading: 'Say "hi"', items: [] }]),
   });
   assert.match(source, /section\(view, "section_0", "Say \\"hi\\"", Accent, &\[\]\)/);
-  assert.match(source, /big\(view, "a \\"b\\"", "v1", ""\)/);
+  assert.match(source, /big\(view, "a \\"b\\"", "v1", vec!\[\]\)/);
 });
 
 test('a list check failed is split in half and renamed', () => {

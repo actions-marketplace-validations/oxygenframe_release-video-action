@@ -416,8 +416,17 @@ async fn section(view: View, name: &str, heading: &str, tone: Ink, items: &[&str
     }
 }
 
+/// "made by Oxframe", with Oxframe in the colors of its logo.
+fn made_by() -> Vec<RichSpan> {
+    vec![
+        span("made by "),
+        span("Ox").color(color!("#e13238")),
+        span("frame").color(color!("#68abdf")),
+    ]
+}
+
 /// The version in large type, its halo, and a line under it.
-async fn big(view: View, above: &str, version: &str, below: &str) {
+async fn big(view: View, above: &str, version: &str, below: Vec<RichSpan>) {
     let top = view.add(Txt::new().text(above).h2().fill(Muted).y(-110.0).opacity(0.0));
     let label = view.add(
         Txt::new()
@@ -429,7 +438,7 @@ async fn big(view: View, above: &str, version: &str, below: &str) {
             .fill(rest())
             .opacity(0.0),
     );
-    let bottom = view.add(Txt::new().text(below).h2().fill(Muted).y(150.0).opacity(0.0));
+    let bottom = view.add(Txt::new().rich(below).h2().fill(Muted).y(150.0).opacity(0.0));
     all((top.fade_in(), label.slide_in(Side::Bottom))).await;
     halo(label, oxframe::nodes::current_theme().ink(Accent)).await;
     bottom.fade_in().await;
@@ -441,7 +450,7 @@ function opening(repo, version) {
   return `#[oxframe::scene]
 async fn version(view: View) {
     sea(view);
-    big(view, ${rust(repo)}, ${rust(version)}, "").await;
+    big(view, ${rust(repo)}, ${rust(version)}, vec![]).await;
 }`;
 }
 
@@ -462,7 +471,7 @@ function closing(version, credit) {
 async fn credits(view: View) {
     sea(view);
     transition(Transition::fade()).await;
-    big(view, "", ${rust(version)}, ${credit ? '"made with oxframe"' : '""'}).await;
+    big(view, "", ${rust(version)}, ${credit ? 'made_by()' : 'vec![]'}).await;
 }`;
 }
 
