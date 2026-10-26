@@ -50,7 +50,7 @@ any time later, with `tag`; the notes are read from the release:
 
 ## A scene designed by Claude
 
-With `anthropic-api-key`, Claude reads the notes, comes up with a visual
+With `anthropic-api-key` (or `claude-code-oauth-token`), Claude reads the notes, comes up with a visual
 treatment for them (a diagram of what was fixed, a before and after, a
 counter) and writes the scene from the generated project's agent docs.
 `oxframe check` reviews each version, and its report goes back to Claude
@@ -59,10 +59,20 @@ fails, the template above renders the notes as usual. The treatment is
 printed in the job log.
 
 ```yaml
-      - uses: oxygenframe/release-video-action@v1.4.0
+      - uses: oxygenframe/release-video-action@v1.5.0
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           # model: claude-opus-5-5
+```
+
+With a Claude subscription instead of an API key, run `claude setup-token`
+once and pass the token it prints; the action then asks Claude through
+Claude Code (`claude -p`, no tools):
+
+```yaml
+      - uses: oxygenframe/release-video-action@v1.5.0
+        with:
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 ```
 
 Each video is one to five Claude requests with the oxframe docs as a cached
