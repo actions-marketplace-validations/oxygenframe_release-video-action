@@ -228,3 +228,10 @@ test('a one-bullet card that check rejects splits the bullet, not the heading', 
     ],
   );
 });
+
+test('the last rust block of a reply is the scene', async () => {
+  const { lastRustBlock } = await import('./storyboard.mjs');
+  const reply = 'Plan\n```rust\nfn a() {}\n```\nFixed:\n```rust\nfn main() {}\n```\n';
+  assert.equal(lastRustBlock(reply), 'fn main() {}\n');
+  assert.equal(lastRustBlock('no code'), null);
+});
